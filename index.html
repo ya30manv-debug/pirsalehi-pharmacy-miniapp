@@ -444,11 +444,16 @@ function searchResults(q){
  return list.slice(0,20).map((m,i)=>`<div class="item" data-act="addSearch" data-i="${OTC_DB.indexOf(m)}"><div class="thumb">${icn(m.icon||'pill',24,'#2EA84E')}</div><div class="meta"><b>${m.fullName}</b></div><span class="ic" style="color:var(--g)">${icn('plus',22,'#2EA84E')}</span></div>`).join('');
 }
 function search(){
- return `<div class="screen">${ab('جستجوی دارو و محصولات',null,null,true)}
+ const isOtc=order.flow==='otc';
+ const cartCount=order.items.length;
+ return `<div class="screen">${ab(isOtc?'انتخاب دارو (OTC)':'جستجوی دارو و محصولات',null,null,true)}
   <div style="padding:0 16px 8px">
-   <div class="searchbox"><span class="ic">${icn('search',18,'#8A9099')}</span><input id="search-input" class="sinput" placeholder="نام دارو، مکمل یا برند…" value="${order.searchQ||''}" autocomplete="off"><span class="ic" id="clr" data-act="clearSearch" style="${order.searchQ?'':'display:none'}">${icn('x',18,'#8A9099')}</span></div>
+   <div class="searchbox"><span class="ic">${icn('search',18,'#8A9099')}</span><input id="search-input" class="sinput" placeholder="نام دارو را تایپ کنید…" value="${order.searchQ||''}" autocomplete="off"><span class="ic" id="clr" data-act="clearSearch" style="${order.searchQ?'':'display:none'}">${icn('x',18,'#8A9099')}</span></div>
   </div>
-  <div class="body"><div class="content" id="search-results" style="padding-top:6px"></div></div></div>`;
+  ${isOtc&&cartCount?`<div style="padding:0 16px 8px"><div class="card" style="background:var(--mint);padding:10px 14px;display:flex;align-items:center;justify-content:space-between;cursor:pointer" data-act="goToOtcCart"><div style="font-size:13px;color:var(--gd);font-weight:700">${icn('bag',16,'#2EA84E')} ${toFa(cartCount)} قلم انتخاب‌شده</div><button class="btn primary" style="height:34px;font-size:13px" data-act="goToOtcCart">ادامه ${icn('arrowL',16,'#fff')}</button></div></div>`:''}
+  <div class="body"><div class="content" id="search-results" style="padding-top:6px"></div></div>
+  ${isOtc?`<div class="foot" style="${cartCount?'':'display:none'}" id="otc-foot"><button class="btn" data-act="goToOtcCart">ادامه با ${toFa(cartCount)} قلم ${icn('arrowL',20,'#fff')}</button></div>`:''}
+  </div>`;
 }
 
 /* ===================== Screens ===================== */
@@ -931,6 +936,31 @@ function addressForm(){
 }
 
 /* ---- problem / unhappy-path screens (triggered by order status from the backend) ---- */
+function otcPersonInfo(){
+ const cartRows=order.items.map((it,i)=>`
+   <div class="item" style="padding:8px 12px">
+     <div class="thumb" style="width:36px;height:36px">${icn('pill',20,'#6B4FB8')}</div>
+     <div class="meta"><b style="font-size:13px">${it.name}</b></div>
+     <div style="display:flex;align-items:center;gap:6px">
+       <button class="qb" data-act="otcDec" data-i="${i}" ${it.qty<=1?'disabled style="opacity:.4"':''}>${icn('minus',14,'#1B8540',2.4)}</button>
+       <span style="font-size:13px;font-weight:700;min-width:18px;text-align:center">${toFa(it.qty)}</span>
+       <button class="qb" data-act="otcInc" data-i="${i}">${icn('plus',14,'#1B8540',2.4)}</button>
+       <button class="qb" data-act="otcDel" data-i="${i}" style="background:var(--delt);margin-right:4px">${icn('trash',14,'var(--del)')}</button>
+     </div>
+   </div>`).join('');
+ return `<div class="screen">${ab('اطلاعات سفارش OTC',null,null)}
+  <div class="body"><div class="content" style="padding-top:8px">
+   <div class="h1" style="font-size:17px">سبد خرید OTC</div>
+   <div class="card" style="padding:0;overflow:hidden;margin-bottom:14px">${cartRows}</div>
+   <button class="btn-out" style="margin-bottom:18px" data-act="backToSearch">${icn('plus',18,'#2EA84E')} افزودن قلم دیگر</button>
+   <label class="label">نام و نام خانوادگی <span class="req">*</span></label>
+   <input class="field" id="otc-name" placeholder="نام خود را وارد کنید" value="${order.fullName||''}">
+   <label class="label">شمارهٔ تماس <span class="req">*</span></label>
+   <input class="field ph" id="otc-phone" placeholder="۰۹۱۲ …" inputmode="numeric" value="${order.phone||''}">
+  </div></div>
+  <div class="foot"><button class="btn" data-act="submitOtc">ثبت سفارش ${icn('arrowL',20,'#fff')}</button></div></div>`;
+}
+
 function rxRejected(){
  const paper=order.prescType==='paperRx';
  return `<div class="screen">${ab('بررسی نسخه')}
@@ -1023,7 +1053,7 @@ function demoStates(){
    </div></div></div>`;
 }
 
-const SCREENS={home,orders,savedMeds,profile,myDetails,personForm,walletScreen,gateway,support,tracking,rxRejected,partial,payFailed,demoStates,search,requestType,prescriptionType,eRxForm,paperUpload,productAdd,wait,itemsConfirm,priceWait,invoice,coldChain,deliveryMethod,addressShipping,payment,success,addressForm};
+const SCREENS={home,orders,savedMeds,profile,myDetails,personForm,walletScreen,gateway,support,tracking,rxRejected,partial,payFailed,demoStates,search,requestType,prescriptionType,eRxForm,paperUpload,productAdd,wait,itemsConfirm,priceWait,invoice,coldChain,deliveryMethod,addressShipping,payment,success,addressForm,otcPersonInfo};
 const TAB_ROOTS=['home','orders','savedMeds','profile'];
 const app=document.getElementById('app');
 let cur='home', hist=[], reviewTimer=null, trackTimer=null, priceTimer=null;
@@ -1275,9 +1305,43 @@ document.addEventListener('click',e=>{
     case 'addSearch':{ const m=OTC_DB[+t.dataset.i]; if(!m)break;
       order.flow='otc'; order.reqType='otc';
       const exists=order.items.find(i=>i.name===m.fullName);
-      if(exists){ exists.qty++; toast(m.fullName+' — تعداد افزایش یافت'); }
-      else { order.items.push({name:m.fullName,form:'OTC',unit:0,qty:1,cold:false,icon:m.icon||'pill',pending:false}); }
-      order.hasCold=false; notify('success'); toast('به سبد اضافه شد');
+      if(exists){ exists.qty++; toast(m.name+' — تعداد افزایش یافت'); }
+      else { order.items.push({name:m.fullName,form:'OTC',unit:0,qty:1,cold:false,icon:m.icon||'pill',pending:false}); toast(m.name+' به سبد اضافه شد'); }
+      order.hasCold=false; notify('success');
+      // آپدیت صفحهٔ سرچ بدون از دست دادن فوکوس
+      app.innerHTML=SCREENS['search']();
+      const inp2=app.querySelector('#search-input');
+      const box2=app.querySelector('#search-results');
+      if(inp2){ inp2.value=order.searchQ||''; try{inp2.focus(); inp2.setSelectionRange(inp2.value.length,inp2.value.length);}catch(e){} }
+      if(box2) box2.innerHTML=searchResults((order.searchQ||'').trim());
+      inp2&&inp2.addEventListener('input',()=>{ order.searchQ=inp2.value; const clr=app.querySelector('#clr'); if(clr)clr.style.display=order.searchQ?'':'none'; box2.innerHTML=searchResults(order.searchQ.trim()); });
+      break; }
+    case 'goToOtcCart':{
+      if(!order.items.length){toast('حداقل یک قلم انتخاب کنید');break;}
+      // کاربر نام رو وارد کنه (مثل نسخه‌دار)
+      go('otcPersonInfo');
+      break; }
+    case 'backToSearch': go('search'); break;
+    case 'otcInc':{ const it=order.items[+t.dataset.i]; if(it){it.qty++;} app.innerHTML=SCREENS['otcPersonInfo'](); break; }
+    case 'otcDec':{ const it=order.items[+t.dataset.i]; if(it){it.qty=Math.max(1,it.qty-1);} app.innerHTML=SCREENS['otcPersonInfo'](); break; }
+    case 'otcDel':{ order.items.splice(+t.dataset.i,1); if(!order.items.length){go('search');}else{app.innerHTML=SCREENS['otcPersonInfo']();} break; }
+    case 'submitOtc':{
+      const nameEl=app.querySelector('#otc-name'), phoneEl=app.querySelector('#otc-phone');
+      const name=(nameEl&&nameEl.value.trim())||'';
+      const phone=(phoneEl&&phoneEl.value.trim())||'';
+      if(!name){toast('لطفاً نام خود را وارد کنید');return;}
+      if(!order.items.length){toast('سبد خرید خالی است');return;}
+      order.fullName=name; order.phone=phone;
+      notify('success'); go('success');
+      (async()=>{
+        try{
+          const { order: created } = await api('/api/orders', { method:'POST', body: JSON.stringify({
+            name, phone, type:'otc', telegramUserId: getTelegramUserId(),
+            items: order.items, fee:0, status:'wait', total:0
+          })});
+          order.serverId=created.id; order.code=created.id;
+        }catch(e){ console.error('ثبت سفارش OTC ناموفق بود',e); }
+      })();
       break; }
     case 'reqCustom':{
       const customName=(order.searchQ||'').trim();
@@ -1288,7 +1352,11 @@ document.addEventListener('click',e=>{
       }
       break; }
     case 'start': order.reqType='rx'; go('requestType'); break;
-    case 'reqNext': if(order.reqType==='rx'){go('prescriptionType');} else {order.flow=order.reqType; go('productAdd');} break;
+    case 'reqNext': 
+      if(order.reqType==='rx'){ go('prescriptionType'); }
+      else if(order.reqType==='otc'){ order.flow='otc'; order.items=[]; order.searchQ=''; go('search'); }
+      else { order.flow=order.reqType; go('productAdd'); }
+      break;
     case 'goDetails': go('myDetails'); break;
     case 'editPerson': order.editPerson=+t.dataset.i; order.pLabel=PEOPLE[+t.dataset.i].label; go('personForm'); break;
     case 'addPerson': order.editPerson=-1; order.pLabel='دلخواه'; go('personForm'); break;
